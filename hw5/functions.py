@@ -5,24 +5,16 @@ from sklearn.metrics import mean_squared_error
 from skimage.metrics import peak_signal_noise_ratio
 from scipy.signal import convolve2d
 
-# def gaussian_pyramid(image, n_levels):
-#     level_zero = image.copy()
-#     gaussian_pyr = [level_zero]
-#     for _ in range(n_levels):
-#         level_zero = cv2.pyrDown(level_zero)
-#         gaussian_pyr.append(np.float32(level_zero))
-#     return gaussian_pyr
-
-def gaussian_pyramid(img, levels=6):
+def gaussian_pyramid(image, n_levels=6):
     """
     Compute the Gaussian pyramid
 
     Inputs:
-    - img: Input image of size (N,M)
-    - levels: Number of stages for the Gaussian pyramid
+    - image: Input image of size (N,M)
+    - n_levels: Number of stages for the Gaussian pyramid
 
     Returns:
-    A tuple of levels images 
+    desired gaussian pyramid 
     """
 
     # approximate length 5 Gaussian filter using binomial filter
@@ -36,9 +28,9 @@ def gaussian_pyramid(img, levels=6):
     # approximate 2D Gaussian
     # filt = convolve2d(filt, filt.T)
 
-    pyr = [img]
+    pyr = [image]
 
-    for i in np.arange(levels):
+    for i in np.arange(n_levels):
         # zero pad the previous image for convolution
         # boarder of 2 since filter is of length 5
         p_0 = np.pad( pyr[-1], (2,), mode='constant' )
@@ -53,14 +45,32 @@ def gaussian_pyramid(img, levels=6):
     return pyr
 
 def laplacian_pyramid(gaussian_pyr):
+    """
+    Compute the laplacian pyramid
+
+    Inputs:
+    - gaussian_pyr: Input gaussian pyramid  
+
+    Returns:
+    desired laplacian pyramid 
+    """
+
+    # details pyramid(laplacian)
+    # first index should be, the last level of gaussian pyramid
     laplacian_top = gaussian_pyr[-1]
     n_levels = len(gaussian_pyr) - 1
     
+
     laplacian_pyr = [laplacian_top]
     for i in range(n_levels,0,-1):
+        # this is the size of gaussian level to be expanded
+        # it shuold be equal to index before itself
         size = (gaussian_pyr[i - 1].shape[1], gaussian_pyr[i - 1].shape[0])
-        # print(size)
+
+        # openCV pyrUp make the pyramid transform
         gaussian_expanded = cv2.pyrUp(gaussian_pyr[i], dstsize=size)
+
+        # subtraction operation 
         laplacian = np.subtract(gaussian_pyr[i-1], gaussian_expanded)
         laplacian_pyr.append(laplacian)
     return laplacian_pyr
@@ -73,9 +83,8 @@ def pyramid_reconstruct(gaussian_pyr):
 
     reconstruct_pyr = [laplacian_top]
     for i in range(n_levels,0,-1):
-        # size = (gaussian_pyr[i - 1].shape[1], gaussian_pyr[i - 1].shape[0])
+
         size = (gaussian_pyr[i - 1].shape[1], gaussian_pyr[i - 1].shape[0])
-        # print(size)
 
         gaussian_expanded = cv2.pyrUp(gaussian_pyr[i], dstsize=size)
 
@@ -96,29 +105,15 @@ def box_filter(image,windowSize=3,imagePaddingSize=0):
     for i in range(0,length,1):
         for j in range(0,width,1):
             start = (max(j-size, 0),max(i-size, 0))
-            # end0 = j+windowSize
-            # end1 = i+windowSize
-            
-            # if end0>width:
-            #     end0 = width
-                
-            # if end1>length:
-            #     end1 = length
-            
+
             end = (min(j+size, width-1),min(i+size, length-1))
-            # x_start = max(i-size, 0)
-            # x_end = min(i+size, img.shape[0]-1)
-            # y_start = max(j-size, 0)
-            # y_end = min(j+size, img.shape[1]-1)
-    
-            # value = img[x_start:x_end+1, y_start:y_end+1].mean()
+
             buffer = image.copy()[start[0]:(end[0]+1), start[1]:(end[1]+1)][0]
             buffer_mean = np.mean(buffer)
             newImage[j,i] = buffer_mean
 
     return newImage
 
-# TO DO: diffrent factors of zoom or shrink
 def replication(image,zoom_factor=0.5):
     newWidth = math.floor(image.shape[1]*zoom_factor) 
     newLength = math.floor(image.shape[0]*zoom_factor) 
@@ -135,22 +130,16 @@ def approximation_pyramid(image , n_levels):
     
     return approxi_pyr
 
-    #     level_zero = image.copy()
-    # gaussian_pyr = [level_zero]
-    # for i in range(n_levels):
-    #     level_zero = cv2.pyrDown(level_zero)
-    #     gaussian_pyr.append(np.float32(level_zero))
-
-
 def mean_square_error(imageSource, imagetarget):
 	# the 'Mean Squared Error' between the two images is the
 	# sum of the squared difference between the two images;
 	# NOTE: the two images must have the same dimension
 	err = np.sum((imageSource.astype("float") - imagetarget.astype("float")) ** 2)
 	err /= float(imageSource.shape[0] * imageSource.shape[1])
-	
-	# return the MSE, the lower the error, the more "similar"
-	# the two images are
+	'''
+	return the MSE, the lower the error, the more "similar"
+	the two images are
+    '''
 	return format(err,'.6f')
 
 def coefficientQuantizer(coeff,step=2):

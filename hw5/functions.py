@@ -14,7 +14,7 @@ def gaussian_pyramid(image, n_levels=6):
         - n_levels: Number of stages for the Gaussian pyramid
 
     Returns:
-        desired gaussian pyramid 
+        Desired gaussian pyramid 
     """
 
     # approximate length 5 Gaussian filter using binomial filter
@@ -47,7 +47,7 @@ def laplacian_pyramid(gaussian_pyr):
         - gaussian_pyr: Input gaussian pyramid  
 
     Returns:
-        desired laplacian pyramid 
+        Desired laplacian pyramid 
     """
 
     # details pyramid(laplacian)
@@ -72,7 +72,7 @@ def laplacian_pyramid(gaussian_pyr):
 
 def pyramid_reconstruct(gaussian_pyr):
     """
-    reconstruct the original image, using provided gaussian (or approximation) pyramid
+    Reconstruct the original image, using provided gaussian (or approximation) pyramid
     NOTE: its really simillar to 'laplacian_pyramid' function, just has one more step.
     that is the summation step, where we add laplacian iamge and expanded gaussian
     in order to build next level image in the pyramid
@@ -82,7 +82,7 @@ def pyramid_reconstruct(gaussian_pyr):
         - gaussian_pyr: Input gaussian pyramid
 
     Returns:
-        desired laplacian pyramid and reconstructed pyramid
+        Desired laplacian pyramid and reconstructed pyramid
     """
 
 
@@ -109,7 +109,7 @@ def pyramid_reconstruct(gaussian_pyr):
 
 def box_filter(image,windowSize=3,imagePaddingSize=0):
     """
-    reconstruct the original image, using provided gaussian (or approximation) pyramid
+    Reconstruct the original image, using provided gaussian (or approximation) pyramid
     NOTE: its really simillar to 'laplacian_pyramid' function, just has one more step.
     that is the summation step, where we add laplacian iamge and expanded gaussian
     in order to build next level image in the pyramid
@@ -121,7 +121,7 @@ def box_filter(image,windowSize=3,imagePaddingSize=0):
         - imagePaddingSize: size of image padding. assumed to be eqaul in length and width
 
     Returns:
-        smoothed image with (windowSize*windowSize) averaging kernel
+        Smoothed image with (windowSize*windowSize) averaging kernel
     """
 
     width = image.shape[0]
@@ -151,12 +151,15 @@ def box_filter(image,windowSize=3,imagePaddingSize=0):
 
 def replication(image,zoom_factor=0.5):
     '''
-    the nearest neighbor alogorithm, which is the simplest way to interpolate.
+    The nearest neighbor alogorithm, which is the simplest way to interpolate.
     also, shrink image into size, quarter than the input image size.
 
     Inputs:
         - image: Inpute image of size (N,M)
         - zoom_factor: 
+
+    Returns:
+        Shirinked image
     '''
     
     # output image size calculation
@@ -197,20 +200,56 @@ def approximation_pyramid(image , n_levels):
     return approxi_pyr
 
 def mean_square_error(imageSource, imagetarget):
-	# the 'Mean Squared Error' between the two images is the
-	# sum of the squared difference between the two images;
-	# NOTE: the two images must have the same dimension
-	err = np.sum((imageSource.astype("float") - imagetarget.astype("float")) ** 2)
-	err /= float(imageSource.shape[0] * imageSource.shape[1])
-	'''
-	return the MSE, the lower the error, the more "similar"
-	the two images are
-    '''
-	return format(err,'.6f')
+    """
+	The "Mean Squared Error" between the two images is the
+	sum of the squared difference between the two images.
+    the lower the error, the more "similar" the two images are.
+    
+	NOTE: the two images must have the same dimension
+
+    Inputs:
+        - imageSource: the source image, we want to calculate the target image difference of 
+        - imageTarget: the target image, we calculate how far it is from the source
+	
+	Returns:
+        The MSE
+    """
+
+    # cumulative difference 
+    err = np.sum((imageSource.astype("float") - imagetarget.astype("float")) ** 2)
+
+    # divide by length*width
+    err /= float(imageSource.shape[0] * imageSource.shape[1])
+	
+    return format(err,'.6f')
 
 def coefficientQuantizer(coeff,step=2):
+    """
+    Quantize the wavelet coeddicients, using the formula in the exercise description.
+    The formula, simply divide coefficients by given 'step', and round them, and again
+    multiply by 'step'. in this way, we have quantized coefficients.
+
+    Inputs:
+        - coeff: given coefficients to be quantized
+        - step: scale of quantization
+    
+    Returns:
+        new coefficients
+    """
     coeff_new = step * np.sign(coeff) * np.floor(np.abs(coeff)/step)
     return coeff_new
 
 def PSNR(srcImage,testImage):
+    """
+    Implementation of 'Peak Signal to Noise Ratio' method
+    using, sci-kit image library.
+    The greater the result, the more "similar" the two images are.
+
+    Inputs:
+        - srcImage: the source image, we want to calculate the target image difference of 
+        - testImage: the target image, we calculate how similar it is with the source    
+
+    Returns:
+        The PSNR
+    """
     return peak_signal_noise_ratio(srcImage,testImage)

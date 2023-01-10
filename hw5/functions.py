@@ -73,8 +73,8 @@ def laplacian_pyramid(gaussian_pyr):
 def pyramid_reconstruct(gaussian_pyr):
     """
     Reconstruct the original image, using provided gaussian (or approximation) pyramid
-    NOTE: its really simillar to 'laplacian_pyramid' function, just has one more step.
-    that is the summation step, where we add laplacian iamge and expanded gaussian
+    NOTE: its really simillar to 'laplacian_pyramid' function, just has one more step;
+    that is the summation step, where we add laplacian image and expanded gaussian
     in order to build next level image in the pyramid
 
 
@@ -109,11 +109,7 @@ def pyramid_reconstruct(gaussian_pyr):
 
 def box_filter(image,windowSize=3,imagePaddingSize=0):
     """
-    Reconstruct the original image, using provided gaussian (or approximation) pyramid
-    NOTE: its really simillar to 'laplacian_pyramid' function, just has one more step.
-    that is the summation step, where we add laplacian iamge and expanded gaussian
-    in order to build next level image in the pyramid
-
+    Apply averaging filter on Input image. Convolve kernel with size (windoSize,windowSize).
 
     Inputs:
         - image: Input image of size (N,M)

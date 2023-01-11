@@ -4,6 +4,7 @@ import math
 from sklearn.metrics import mean_squared_error
 from skimage.metrics import peak_signal_noise_ratio
 from scipy.signal import convolve2d
+import pywt
 
 def gaussian_pyramid(image, n_levels=6):
     """
@@ -113,8 +114,8 @@ def box_filter(image,windowSize=3,imagePaddingSize=0):
 
     Inputs:
         - image: Input image of size (N,M)
-        - windowSize: size of averaging kernel
-        - imagePaddingSize: size of image padding. assumed to be eqaul in length and width
+        - windowSize: Size of averaging kernel
+        - imagePaddingSize: Size of image padding. assumed to be eqaul in length and width
 
     Returns:
         Smoothed image with (windowSize*windowSize) averaging kernel
@@ -152,7 +153,7 @@ def replication(image,zoom_factor=0.5):
 
     Inputs:
         - image: Inpute image of size (N,M)
-        - zoom_factor: 
+        - zoom_factor: Shrinking ratio 
 
     Returns:
         Shirinked image
@@ -175,7 +176,7 @@ def approximation_pyramid(image , n_levels):
         - n_levels: Number of stages for the approximation pyramid
 
     Returns:
-        desired approximation pyramid 
+        Desired approximation pyramid 
     """
 
     # first level of pyramid is the original iamge
@@ -204,8 +205,8 @@ def mean_square_error(imageSource, imagetarget):
 	NOTE: the two images must have the same dimension
 
     Inputs:
-        - imageSource: the source image, we want to calculate the target image difference of 
-        - imageTarget: the target image, we calculate how far it is from the source
+        - imageSource: The source image, we want to calculate the target image difference of 
+        - imageTarget: The target image, we calculate how far it is from the source
 	
 	Returns:
         The MSE
@@ -226,11 +227,11 @@ def coefficientQuantizer(coeff,step=2):
     multiply by 'step'. in this way, we have quantized coefficients.
 
     Inputs:
-        - coeff: given coefficients to be quantized
-        - step: scale of quantization
+        - coeff: Given coefficients to be quantized
+        - step: Scale of quantization
     
     Returns:
-        new coefficients
+        New coefficients
     """
     coeff_new = step * np.sign(coeff) * np.floor(np.abs(coeff)/step)
     return coeff_new
@@ -242,10 +243,53 @@ def PSNR(srcImage,testImage):
     The greater the result, the more "similar" the two images are.
 
     Inputs:
-        - srcImage: the source image, we want to calculate the target image difference of 
-        - testImage: the target image, we calculate how similar it is with the source    
+        - srcImage: The source image, we want to calculate the target image difference of 
+        - testImage: The target image, we calculate how similar it is with the source    
 
     Returns:
         The PSNR
     """
     return peak_signal_noise_ratio(srcImage,testImage)
+
+def wavelet_payramid(image,n_levels,normalization=False):
+    """
+    Computing wavelet pyramid, using haar method.
+
+    NOTE: if you normalize the coefficients (by setting 'normalization=False') you
+    can not rebnild the original image properly. In order to rebuild the original image you
+    need to transform the coefficients back to the original domain.
+
+    Inputs:
+        - image: Provided image we want to decomposite.
+        - n_levels: Number of stages for wavelet pyramid
+        - normalization: A flag, which consider normalization over coefficients
+
+    Returns:
+        Desired wavelet pyramid in form of array, Desired wavelet pyramid in form of list
+    
+    """
+
+    coeffs = pywt.wavedec2(image, 'haar', mode='periodization', level=n_levels,)
+    if normalization:
+        coeffs = normalize(coeffs)
+    c_matrix, c_slices = pywt.coeffs_to_array(coeffs)
+
+    return c_matrix , coeffs
+
+def normalize(array):
+    """
+    A simple normalization function.
+
+    Inputs:
+        - array: Array to be normalized
+
+    Returns:
+        Normalized array.
+    
+    """
+    if isinstance(array, list):
+        return list(map(normalize, array))
+    if isinstance(array, tuple):
+        return tuple(normalize(list(array)))
+    normalizedData = (array-np.min(array))/(np.max(array)-np.min(array))
+    return normalizedData

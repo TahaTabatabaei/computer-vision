@@ -70,7 +70,7 @@ def stitch(matches,keypoints_l,keypoints_r,left_img,right_img):
     matches = sorted(matches, key=lambda x:x.distance)
 
     # Map each match to corresponding keypoints
-    points = matches[:3]
+    points = matches[:4]
     # points = matches[:3]
 
     points = map(lambda m: (keypoints_l[m.queryIdx], keypoints_r[m.trainIdx]), points)
@@ -89,58 +89,58 @@ def stitch(matches,keypoints_l,keypoints_r,left_img,right_img):
     pts_left = np.array(pts_left, dtype='float32')
     pts_right = np.array(pts_right, dtype='float32')
 
-    # Plot points on the images
-    colors = [[0, 0, 255], [0, 255, 0], [255, 0, 0], [255,255,0]]
+    # # Plot points on the images
+    # colors = [[0, 0, 255], [0, 255, 0], [255, 0, 0], [255,255,0]]
 
-    right_img_pts = right_img.copy()
-    for i, (x, y) in enumerate(pts_right):
-        x, y = int(x), int(y)
-        right_img_pts[y-10:y+10, x-10:x+10, :] = colors[i]
+    # right_img_pts = right_img.copy()
+    # for i, (x, y) in enumerate(pts_right):
+    #     x, y = int(x), int(y)
+    #     right_img_pts[y-10:y+10, x-10:x+10, :] = colors[i]
 
-    left_img_pts = left_img.copy()
-    for i, (x, y) in enumerate(pts_left):
-        x, y = int(x), int(y)
-        left_img_pts[y-10:y+10, x-10:x+10, :] = colors[i]
+    # left_img_pts = left_img.copy()
+    # for i, (x, y) in enumerate(pts_left):
+    #     x, y = int(x), int(y)
+    #     left_img_pts[y-10:y+10, x-10:x+10, :] = colors[i]
 
-    # Create affine transformation matrix
-    M = cv2.getAffineTransform(pts_right, pts_left)
-    right_image_transformed = cv2.warpAffine(right_img, M, (right_img.shape[1], right_img.shape[0]))
+    # # Create affine transformation matrix
+    # M = cv2.getAffineTransform(pts_right, pts_left)
+    # right_image_transformed = cv2.warpAffine(right_img, M, (right_img.shape[1], right_img.shape[0]))
 
-    # Create a mask
-    mask = np.all((left_img == 0), axis=2)
-    result = np.zeros_like(left_img)
-    result[mask] = 255
-
-
-    # Merge the images
-    full_mask = np.repeat(mask.reshape(mask.shape+(1,)), 3, axis=2)
-    result = left_img + (full_mask * right_image_transformed)
-
-    return result
+    # # Create a mask
+    # mask = np.all((left_img == 0), axis=2)
+    # result = np.zeros_like(left_img)
+    # result[mask] = 255
 
 
+    # # Merge the images
+    # full_mask = np.repeat(mask.reshape(mask.shape+(1,)), 3, axis=2)
+    # result = left_img + (full_mask * right_image_transformed)
 
-def homography(matches,_kp1,_kp2,reprojThresh=0.4):
+    return pts_left, pts_right
+
+
+
+def homography(matches,ptsA,ptsB,reprojThresh=0.4):
     # computing a homography requires at least 4 matches
-    if len(matches) > 4:
+    # if len(matches) > 4:
         # construct the two sets of points
-        ptsA = np.float32([_kp1[i] for (_, i) in matches])
-        ptsB = np.float32([_kp2[i] for (i, _) in matches])
+        # ptsA = np.float32([_kp1[i] for (_, i) in matches])
+        # ptsB = np.float32([_kp2[i] for (i, _) in matches])
 
         # compute the homography between the two sets of points
-        (h, status) = cv2.findHomography(ptsA, ptsB, cv2.RANSAC,
-            reprojThresh)
-            
-        # return the matches along with the homograpy matrix
-        # and status of each matched point
-        return (h, status)
+    (h, status) = cv2.findHomography(ptsA, ptsB, cv2.RANSAC,
+        reprojThresh)
+        
+    # return the matches along with the homograpy matrix
+    # and status of each matched point
+    return (h, status)
 
     # otherwise, no homograpy could be computed
-    return None
+    # return None
 
 def st(imageA,imageB,H):
     # apply a perspective warp to stitch the images together
-    
+
     # (matches, H, status) = M
     result = cv2.warpPerspective(imageA, H,
         (imageA.shape[1] + imageB.shape[1], imageA.shape[0]))

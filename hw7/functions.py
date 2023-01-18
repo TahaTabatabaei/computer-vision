@@ -17,47 +17,36 @@ def BruteForceMatcher(src_desc,test_desc,threshold=0.75):
 
     Returns:
         feature(interest) points which are good enough
+        NOTE: we return points in two diffrent lists, due to diffrent use cases.
         
     """
     bf = cv2.BFMatcher()
-    # bf = cv2.DescriptorMatcher_create("BruteForce")
     #TODO: apply crossCheck=True
     
     # knn algorithm for matching. store 2 nearest points as 'k=2'
     matches = bf.knnMatch(src_desc,test_desc, k=2)
-    # matches = bf.match(src_desc,test_desc)
-
-    # print(matches)
 
     good_fPoints = []
     matches1to2 = []
-    mGoodTuple = []
     # apply threshold
     for m in matches:
-        # if m.distance < threshold*n.distance:
-        #     good_fPoints.append([m])
-        # print(m)
-        # print(len(m))
-        # ensure the distance is within a certain ratio of each
-        # other (i.e. Lowe's ratio test)
+        # ensure the distance is within a certain ratio of each other (i.e. Lowe's ratio test)
         if len(m) == 2 and m[0].distance < threshold * m[1].distance:
-            mGoodTuple.append((m[0].trainIdx, m[0].queryIdx))
             good_fPoints.append(m[0])
             matches1to2.append([m[0]])
 
-
-    return good_fPoints , matches1to2 , mGoodTuple
+    return good_fPoints , matches1to2
 
 # TODO: flann matching method
 # def flannMatcher(src_desc,test_desc):
 
 def howSimilar(_kp1,_kp2,good_feature_points):
     """
-    Calculate similarity percentage between image, based on how many 'good comment feature points' they have.
+    Calculate the similarity percentage between the discovered key points, based on how many 'good common feature points' they have.
 
     Inputs:
-        - _kp1: set of source image keypoints
-        - _kp2: set of test image keypoints
+        - _kp1: set of source image key points
+        - _kp2: set of test image key points
         - good_feature_points: good commen feature points. Output of matcher function
 
     Returns:
@@ -69,15 +58,43 @@ def howSimilar(_kp1,_kp2,good_feature_points):
     return ((len(good_feature_points) / number_keypoints) * 100)
 
 def homography(pairs):
+    """
+    Homography, is a transformation that is occurring between two planes.In other words,
+    it is a mapping between two planar projections of an image. It is represented by
+    a 3x3 transformation matrix in a homogenous coordinates space.
+
+    This function, calculates the matrix.
+
+    Inputs:
+        - pairs: 4 pairs of matches found in previous steps. Since the Homography matrix
+        has 8 degrees of freedom, we need at least four pairs of corresponding points
+        to solve for the values of the Homography matrix.
+
+    Returns:
+        Homography matrix.
+    
+
+    read the following links for a complete discussion about homography
+    transformation(highly recommended). The second link explaines instruction logic of 'row1' 
+    and 'row2' in details. 
+    https://mattmaulion.medium.com/homography-transform-image-processing-eddbcb8e4ff7
+    https://towardsdatascience.com/understanding-homography-a-k-a-perspective-transformation-cacaed5ca17
+    """
     rows = []
     for i in range(pairs.shape[0]):
+        # select a pair of points
         p1 = np.append(pairs[i][0:2], 1)
         p2 = np.append(pairs[i][2:4], 1)
+
+        # multiplication matrix A
         row1 = [0, 0, 0, p1[0], p1[1], p1[2], -p2[1]*p1[0], -p2[1]*p1[1], -p2[1]*p1[2]]
         row2 = [p1[0], p1[1], p1[2], 0, 0, 0, -p2[0]*p1[0], -p2[0]*p1[1], -p2[0]*p1[2]]
         rows.append(row1)
         rows.append(row2)
     rows = np.array(rows)
+
+    # considering the equation A H = b , Since we want the H matrix, we should 
+    # use Singular Value Decomposition
     U, s, V = np.linalg.svd(rows)
     H = V[-1].reshape(3, 3)
     H = H/H[2, 2] # standardize to let w*H[2,2] = 1

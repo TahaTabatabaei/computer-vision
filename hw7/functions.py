@@ -111,6 +111,7 @@ def ransac(matches, threshold, iters):
     
     for i in range(iters):
         points = random_point(matches)
+        
         H = homography(points)
         
         #  avoid dividing by zero 
@@ -131,7 +132,7 @@ def ransac(matches, threshold, iters):
     return best_inliers, best_H
 
 
-def stitch_img(left, right, H):
+def stitch(left, right, H):
     print("stiching image ...")
     
     # Convert to double and normalize. Avoid noise.

@@ -111,7 +111,7 @@ def ransac(matches, threshold, iters):
     
     for i in range(iters):
         points = random_point(matches)
-        
+
         H = homography(points)
         
         #  avoid dividing by zero 
@@ -196,4 +196,4 @@ def stitch(left, right, H):
 
 
 # https://pyimagesearch.com/2016/01/11/opencv-panorama-stitching/
-
+# https://gist.github.com/tigercosmos/90a5664a3b698dc9a4c72bc0fcbd21f4

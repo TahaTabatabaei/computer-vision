@@ -1,5 +1,7 @@
 import cv2
 import numpy as np
+import random
+from tqdm.notebook import tqdm
 
 def BruteForceMatcher(src_desc,test_desc,threshold=0.75):
     """
@@ -66,87 +68,131 @@ def howSimilar(_kp1,_kp2,good_feature_points):
 
     return ((len(good_feature_points) / number_keypoints) * 100)
 
-def stitch(matches,keypoints_l,keypoints_r,left_img,right_img):
-    matches = sorted(matches, key=lambda x:x.distance)
-
-    # Map each match to corresponding keypoints
-    points = matches[:4]
-    # points = matches[:3]
-
-    points = map(lambda m: (keypoints_l[m.queryIdx], keypoints_r[m.trainIdx]), points)
-
-    # Map keypoints to coordinates
-    pts_left = []
-    pts_right = []
-    for left_pt, right_pt in points:
-        pts_left.append(list(left_pt.pt))
-        pts_right.append(list(right_pt.pt))
-
-    print(pts_left)
-    print(pts_right)
-
-    # Convert to numpy arrays
-    pts_left = np.array(pts_left, dtype='float32')
-    pts_right = np.array(pts_right, dtype='float32')
-
-    # # Plot points on the images
-    # colors = [[0, 0, 255], [0, 255, 0], [255, 0, 0], [255,255,0]]
-
-    # right_img_pts = right_img.copy()
-    # for i, (x, y) in enumerate(pts_right):
-    #     x, y = int(x), int(y)
-    #     right_img_pts[y-10:y+10, x-10:x+10, :] = colors[i]
-
-    # left_img_pts = left_img.copy()
-    # for i, (x, y) in enumerate(pts_left):
-    #     x, y = int(x), int(y)
-    #     left_img_pts[y-10:y+10, x-10:x+10, :] = colors[i]
-
-    # # Create affine transformation matrix
-    # M = cv2.getAffineTransform(pts_right, pts_left)
-    # right_image_transformed = cv2.warpAffine(right_img, M, (right_img.shape[1], right_img.shape[0]))
-
-    # # Create a mask
-    # mask = np.all((left_img == 0), axis=2)
-    # result = np.zeros_like(left_img)
-    # result[mask] = 255
+def homography(pairs):
+    rows = []
+    for i in range(pairs.shape[0]):
+        p1 = np.append(pairs[i][0:2], 1)
+        p2 = np.append(pairs[i][2:4], 1)
+        row1 = [0, 0, 0, p1[0], p1[1], p1[2], -p2[1]*p1[0], -p2[1]*p1[1], -p2[1]*p1[2]]
+        row2 = [p1[0], p1[1], p1[2], 0, 0, 0, -p2[0]*p1[0], -p2[0]*p1[1], -p2[0]*p1[2]]
+        rows.append(row1)
+        rows.append(row2)
+    rows = np.array(rows)
+    U, s, V = np.linalg.svd(rows)
+    H = V[-1].reshape(3, 3)
+    H = H/H[2, 2] # standardize to let w*H[2,2] = 1
+    return H
 
 
-    # # Merge the images
-    # full_mask = np.repeat(mask.reshape(mask.shape+(1,)), 3, axis=2)
-    # result = left_img + (full_mask * right_image_transformed)
-
-    return pts_left, pts_right
-
+def random_point(matches, k=4):
+    idx = random.sample(range(len(matches)), k)
+    point = [matches[i] for i in idx ]
+    return np.array(point)
 
 
-def homography(matches,ptsA,ptsB,reprojThresh=0.4):
-    # computing a homography requires at least 4 matches
-    # if len(matches) > 4:
-        # construct the two sets of points
-        # ptsA = np.float32([_kp1[i] for (_, i) in matches])
-        # ptsB = np.float32([_kp2[i] for (i, _) in matches])
+def get_error(points, H):
+    num_points = len(points)
+    all_p1 = np.concatenate((points[:, 0:2], np.ones((num_points, 1))), axis=1)
+    all_p2 = points[:, 2:4]
+    estimate_p2 = np.zeros((num_points, 2))
+    for i in range(num_points):
+        temp = np.dot(H, all_p1[i])
+        estimate_p2[i] = (temp/temp[2])[0:2] # set index 2 to 1 and slice the index 0, 1
+    # Compute error
+    errors = np.linalg.norm(all_p2 - estimate_p2 , axis=1) ** 2
 
-        # compute the homography between the two sets of points
-    (h, status) = cv2.findHomography(ptsA, ptsB, cv2.RANSAC,
-        reprojThresh)
+    return errors
+
+
+def ransac(matches, threshold, iters):
+    num_best_inliers = 0
+    best_H = any
+    best_inliers = any
+    
+    for i in range(iters):
+        points = random_point(matches)
+        H = homography(points)
         
-    # return the matches along with the homograpy matrix
-    # and status of each matched point
-    return (h, status)
+        #  avoid dividing by zero 
+        if np.linalg.matrix_rank(H) < 3:
+            continue
+            
+        errors = get_error(matches, H)
+        idx = np.where(errors < threshold)[0]
+        inliers = matches[idx]
 
-    # otherwise, no homograpy could be computed
-    # return None
+        num_inliers = len(inliers)
+        if num_inliers > num_best_inliers:
+            best_inliers = inliers.copy()
+            num_best_inliers = num_inliers
+            best_H = H.copy()
+            
+    print("inliers/matches: {}/{}".format(num_best_inliers, len(matches)))
+    return best_inliers, best_H
 
-def st(imageA,imageB,H):
-    # apply a perspective warp to stitch the images together
 
-    # (matches, H, status) = M
-    result = cv2.warpPerspective(imageA, H,
-        (imageA.shape[1] + imageB.shape[1], imageA.shape[0]))
-    result[0:imageB.shape[0], 0:imageB.shape[1]] = imageB
+def stitch_img(left, right, H):
+    print("stiching image ...")
+    
+    # Convert to double and normalize. Avoid noise.
+    left = cv2.normalize(left.astype('float'), None, 
+                            0.0, 1.0, cv2.NORM_MINMAX)   
+    # Convert to double and normalize.
+    right = cv2.normalize(right.astype('float'), None, 
+                            0.0, 1.0, cv2.NORM_MINMAX)   
+    
+    # left image
+    height_l, width_l, channel_l = left.shape
+    corners = [[0, 0, 1], [width_l, 0, 1], [width_l, height_l, 1], [0, height_l, 1]]
+    corners_new = [np.dot(H, corner) for corner in corners]
+    corners_new = np.array(corners_new).T 
+    x_news = corners_new[0] / corners_new[2]
+    y_news = corners_new[1] / corners_new[2]
+    y_min = min(y_news)
+    x_min = min(x_news)
 
-    return result
+    translation_mat = np.array([[1, 0, -x_min], [0, 1, -y_min], [0, 0, 1]])
+    H = np.dot(translation_mat, H)
+    
+    # Get height, width
+    height_new = int(round(abs(y_min) + height_l))
+    width_new = int(round(abs(x_min) + width_l))
+    size = (width_new, height_new)
+
+    # right image
+    warped_l = cv2.warpPerspective(src=left, M=H, dsize=size)
+
+    height_r, width_r, channel_r = right.shape
+    
+    height_new = int(round(abs(y_min) + height_r))
+    width_new = int(round(abs(x_min) + width_r))
+    size = (width_new, height_new)
+    
+
+    warped_r = cv2.warpPerspective(src=right, M=translation_mat, dsize=size)
+     
+    black = np.zeros(3)  # Black pixel.
+    
+    # Stitching procedure, store results in warped_l.
+    for i in tqdm(range(warped_r.shape[0])):
+        for j in range(warped_r.shape[1]):
+            pixel_l = warped_l[i, j, :]
+            pixel_r = warped_r[i, j, :]
+            
+            if not np.array_equal(pixel_l, black) and np.array_equal(pixel_r, black):
+                warped_l[i, j, :] = pixel_l
+            elif np.array_equal(pixel_l, black) and not np.array_equal(pixel_r, black):
+                warped_l[i, j, :] = pixel_r
+            elif not np.array_equal(pixel_l, black) and not np.array_equal(pixel_r, black):
+                warped_l[i, j, :] = (pixel_l + pixel_r) / 2
+            else:
+                pass
+                  
+    stitch_image = warped_l[:warped_r.shape[0], :warped_r.shape[1], :]
+    return stitch_image
+
+
+
 
 # https://pyimagesearch.com/2016/01/11/opencv-panorama-stitching/
 

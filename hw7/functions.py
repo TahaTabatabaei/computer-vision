@@ -46,9 +46,9 @@ def howSimilar(_kp1,_kp2,good_feature_points):
     Calculate the similarity percentage between the discovered key points, based on how many 'good common feature points' they have.
 
     Inputs:
-        - _kp1: set of source image key points
-        - _kp2: set of test image key points
-        - good_feature_points: good commen feature points. Output of matcher function
+        - _kp1: set of source image key points.
+        - _kp2: set of test image key points.
+        - good_feature_points: good commen feature points. Output of matcher function.
 
     Returns:
         Similarity percentage
@@ -107,7 +107,7 @@ def random_point(matches, k=4):
     Returns 'k' pairs of matched points randomly.
 
     Inputs:
-        - matches: list of matching points
+        - matches: list of matching points.
         - k: number of desired random points. 
 
     Returns:
@@ -125,7 +125,7 @@ def get_error(points, H):
 
     Inputs:
         - points: matched pairs.
-        - H: homography matrix
+        - H: homography matrix.
 
     Returns:
         Calculated error.
@@ -153,9 +153,9 @@ def ransac(matches, threshold, iters):
     returns the best possible H matrix and match points.
 
     Inputs:
-        - matches: list of matching points
-        - threshold: error threshold
-        - iters: number of algorithm iterations
+        - matches: list of matching points.
+        - threshold: error threshold.
+        - iters: number of algorithm iterations.
 
     Returns:
         best match points and H matrix.
@@ -201,6 +201,17 @@ def ransac(matches, threshold, iters):
 
 
 def stitch(left, right, H):
+    """
+    Stitch provided images.
+
+    Inputs:
+        - left: The image we assume as the main image placed on the left side.
+        - right: the image to be wraped.
+        - H: homography matrix.
+
+    Returns:
+        An stitched image.
+    """
     print("stiching image ...")
     
     # Convert to double and normalize. Avoid noise.

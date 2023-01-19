@@ -8,7 +8,8 @@ def BruteForceMatcher(src_desc,test_desc,threshold=0.75):
     Apply a brute-force method to find matching interest points between the source and test description vectors.
     Using a threshold, discard weak points that are far enough from each other. 
     
-    NOTE: the threshold can be set, due to usecase. 0.75 is recommended.
+    NOTE: the threshold can be set, due to usecase. 0.75 is recommended. Lowe recommends a threshold
+    in range [0.7, 0.8].
 
     Inputs:
         - src_desc: description vector of src image
@@ -16,7 +17,7 @@ def BruteForceMatcher(src_desc,test_desc,threshold=0.75):
         - threshold: limit bound on distance of 2 points, to be discarded
 
     Returns:
-        feature(interest) points which are good enough
+        Feature(interest) points which are good enough
         NOTE: we return points in two diffrent lists, due to diffrent use cases.
         
     """
@@ -50,7 +51,7 @@ def howSimilar(_kp1,_kp2,good_feature_points):
         - good_feature_points: good commen feature points. Output of matcher function
 
     Returns:
-        similarity percentage
+        Similarity percentage
     
     """
     number_keypoints = min(len(_kp1),len(_kp2))
@@ -74,7 +75,7 @@ def homography(pairs):
         Homography matrix.
     
 
-    read the following links for a complete discussion about homography
+    Read the following links for a complete discussion about homography
     transformation(highly recommended). The second link explaines instruction logic of 'row1' 
     and 'row2' in details. 
     https://mattmaulion.medium.com/homography-transform-image-processing-eddbcb8e4ff7
@@ -93,7 +94,7 @@ def homography(pairs):
         rows.append(row2)
     rows = np.array(rows)
 
-    # considering the equation A H = b , Since we want the H matrix, we should 
+    # considering the equation A = H b , Since we want the H matrix, we should 
     # use Singular Value Decomposition
     U, s, V = np.linalg.svd(rows)
     H = V[-1].reshape(3, 3)
@@ -102,12 +103,33 @@ def homography(pairs):
 
 
 def random_point(matches, k=4):
+    """
+    Returns 'k' pairs of matched points randomly.
+
+    Inputs:
+        - matches: list of matching points
+        - k: number of desired random points. 
+
+    Returns:
+        Random pairs of points.
+    """
     idx = random.sample(range(len(matches)), k)
     point = [matches[i] for i in idx ]
     return np.array(point)
 
 
 def get_error(points, H):
+    """
+    Estimate points using the given H matrix, and calculate the difference between the estimated
+    points and the real points, which were used to build the H matrix in the previous step.
+
+    Inputs:
+        - points: matched pairs.
+        - H: homography matrix
+
+    Returns:
+        Calculated error.
+    """
     num_points = len(points)
     all_p1 = np.concatenate((points[:, 0:2], np.ones((num_points, 1))), axis=1)
     all_p2 = points[:, 2:4]
@@ -122,29 +144,58 @@ def get_error(points, H):
 
 
 def ransac(matches, threshold, iters):
+    """
+    Random sample consensus(RANSAC), is an iterative method for estimating a mathematical model
+    from a data set that contains outliers. The RANSAC algorithm works by identifying the outliers
+    in a data set and estimating the desired model using data that does not contain outliers. It also
+    can be interpreted as an outlier detection method. 
+    In this function, we repeatedly compute an H matrix, then evaluate it. At the end, the function
+    returns the best possible H matrix and match points.
+
+    Inputs:
+        - matches: list of matching points
+        - threshold: error threshold
+        - iters: number of algorithm iterations
+
+    Returns:
+        best match points and H matrix.
+
+
+    NOTE: read following links for better understanding of algorithm:
+    https://en.wikipedia.org/wiki/Random_sample_consensus
+    https://www.mathworks.com/discovery/ransac.html#:~:text=Random%20sample%20consensus%2C%20or%20RANSAC,that%20does%20not%20contain%20outliers.
+
+    """
     num_best_inliers = 0
     best_H = any
     best_inliers = any
     
+    # repeat this steps for a prescribed number of iterations
     for i in range(iters):
+        # Randomly select a set of matching points
         points = random_point(matches)
 
+        # compute homography matrix
         H = homography(points)
         
         #  avoid dividing by zero 
         if np.linalg.matrix_rank(H) < 3:
             continue
             
+        # outlier detection
+        # evaluate the H matrix
         errors = get_error(matches, H)
         idx = np.where(errors < threshold)[0]
         inliers = matches[idx]
 
+        # save better inliers and H matrix
         num_inliers = len(inliers)
         if num_inliers > num_best_inliers:
             best_inliers = inliers.copy()
             num_best_inliers = num_inliers
             best_H = H.copy()
             
+    # print number of good inliers
     print("inliers/matches: {}/{}".format(num_best_inliers, len(matches)))
     return best_inliers, best_H
 

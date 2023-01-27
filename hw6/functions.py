@@ -2,6 +2,7 @@ import numpy as np
 import math
 import cv2
 import matplotlib.pyplot as plt
+from skimage.metrics import peak_signal_noise_ratio
 
 
 def RGB2HSI(image):
@@ -138,3 +139,57 @@ def calc_hue(red,green,blue):
             
 
     return hue
+
+
+def normalize(array,newMax,newMin):
+    if isinstance(array, list):
+        return list(map(normalize, array,newMax,newMin))
+    if isinstance(array, tuple):
+        return tuple(normalize(list(array),newMax,newMin))
+    normalizedData = (array-np.min(array))/(np.max(array)-np.min(array))*(newMax-newMin) + newMin
+    return normalizedData
+
+
+def quantize(array, n_bits):
+    coeff = 2**8 // 2**n_bits
+    return (array // coeff) * coeff
+
+
+def mean_square_error(imageSource, imagetarget):
+    """
+	The "Mean Squared Error" between the two images is the
+	sum of the squared difference between the two images.
+    the lower the error, the more "similar" the two images are.
+    
+	NOTE: the two images must have the same dimension
+
+    Inputs:
+        - imageSource: The source image, we want to calculate the target image difference of 
+        - imageTarget: The target image, we calculate how far it is from the source
+	
+	Returns:
+        The MSE
+    """
+
+    # cumulative difference 
+    err = np.sum((imageSource.astype("float") - imagetarget.astype("float")) ** 2)
+
+    # divide by length*width
+    err /= float(imageSource.shape[0] * imageSource.shape[1])
+	
+    return format(err,'.6f')
+
+def PSNR(srcImage,testImage):
+    """
+    Implementation of 'Peak Signal to Noise Ratio' method
+    using, sci-kit image library.
+    The greater the result, the more "similar" the two images are.
+
+    Inputs:
+        - srcImage: The source image, we want to calculate the target image difference of 
+        - testImage: The target image, we calculate how similar it is with the source    
+
+    Returns:
+        The PSNR
+    """
+    return peak_signal_noise_ratio(srcImage,testImage)

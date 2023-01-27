@@ -18,8 +18,7 @@ def BruteForceMatcher(src_desc,test_desc,threshold=0.75):
 
     Returns:
         Feature(interest) points which are good enough
-        NOTE: we return points in two diffrent lists, due to diffrent use cases.
-        
+        NOTE: we return points in two diffrent lists, due to diffrent use cases. 
     """
     bf = cv2.BFMatcher()
     #TODO: apply crossCheck=True
@@ -52,7 +51,6 @@ def howSimilar(_kp1,_kp2,good_feature_points):
 
     Returns:
         Similarity percentage
-    
     """
     number_keypoints = min(len(_kp1),len(_kp2))
 
@@ -164,7 +162,6 @@ def ransac(matches, threshold, iters):
     NOTE: read following links for better understanding of algorithm:
     https://en.wikipedia.org/wiki/Random_sample_consensus
     https://www.mathworks.com/discovery/ransac.html#:~:text=Random%20sample%20consensus%2C%20or%20RANSAC,that%20does%20not%20contain%20outliers.
-
     """
     num_best_inliers = 0
     best_H = any

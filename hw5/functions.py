@@ -271,25 +271,27 @@ def wavelet_payramid(image,n_levels,normalization=False):
 
     coeffs = pywt.wavedec2(image, 'haar', mode='periodization', level=n_levels,)
     if normalization:
-        coeffs = normalize(coeffs)
+        coeffs = normalize(coeffs,1,0)
     c_matrix, c_slices = pywt.coeffs_to_array(coeffs)
 
     return c_matrix , coeffs
 
-def normalize(array):
+def normalize(array,newMax,newMin):
     """
     A simple normalization function.
 
     Inputs:
         - array: Array to be normalized
+        - newMax: Max of new range.
+        - newMin: Min of new range.
 
     Returns:
         Normalized array.
     
     """
     if isinstance(array, list):
-        return list(map(normalize, array))
+        return list(map(normalize, array,newMax,newMin))
     if isinstance(array, tuple):
-        return tuple(normalize(list(array)))
-    normalizedData = (array-np.min(array))/(np.max(array)-np.min(array))
+        return tuple(normalize(list(array),newMax,newMin))
+    normalizedData = (array-np.min(array))/(np.max(array)-np.min(array))*(newMax-newMin) + newMin
     return normalizedData

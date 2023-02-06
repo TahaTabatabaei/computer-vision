@@ -6,26 +6,35 @@ from skimage.metrics import peak_signal_noise_ratio
 
 
 def RGB2HSI(image):
+    """
+    Transform image from RGB space to HSI. Calculates Hue, Saturation & Intensity.
+
+    Inputs:
+        - image: The source image.
+
+    Returns:
+        Image in HSI space.
+    """
+
+    # suspend errors: 1) divide by zero 2) inavalid data-type
     with np.errstate(divide='warn', invalid='warn'):
 
         # normalize pixels in range [0,1]
         image_normal = np.float32(image)/255.0
 
-        #Separate color channels
+        # Separate color channels
         # typr:ignore
         red = image_normal[:,:,0]
+        # type: ignore      
         green = image_normal[:,:,1]
+        # type: ignore 
         blue = image_normal[:,:,2]
 
+        h = hue(red.copy(),green.copy(),blue.copy())
 
+        s = saturation(red.copy(),green.copy(),blue.copy())
 
-        
-
-        h = hue(red,green,blue)
-        # h = calc_hue(red,green,blue)
-        s = saturation(red,green,blue)
-        i = intensity(red,green,blue)
-
+        i = intensity(red.copy(),green.copy(),blue.copy())
 
         return h,s,i
 
@@ -38,7 +47,7 @@ def hue(red, green, blue):
     𝐻 = 
     𝜃 
         if (B ≤ G)    
-        ,else
+        ,else:
             (360 − 𝜃) 
 
 
@@ -61,20 +70,21 @@ def hue(red, green, blue):
 
     """
 
+    # numerator of equation
     numerator = np.multiply(0.5,(np.add(np.subtract(red,green),np.subtract(red,blue))))
 
-
+    # denominator of equation
     z1 = np.add(np.power(np.subtract(red,green),2), np.multiply(np.subtract(red,green),np.subtract(green,blue)))
     z1 = np.where(((z1-0) <= 0.00001) , 0.00001 , z1)
     denominator = np.sqrt(z1)
 
+    # final division
     x = np.divide(numerator,denominator)
-    # print(f'x = {x}')
 
+    # tetha in range [0,2*pi]
     tetha = np.arccos(np.divide(np.multiply(x,(math.pi*2)), 360))
-    # tetha = np.arccos(x)
-    # print(f'tetha2 = {tetha}')
 
+    # if B <= G  h = tetha , else h = 2*pi - tetha
     hue = np.where(blue<=green , tetha , (math.pi*2.0 - tetha))
 
     return hue
@@ -97,8 +107,8 @@ def saturation(red, green, blue):
 
     """
     minimum = np.minimum(np.minimum(red, green), blue)
-    # saturation = 1 - ((3 / (red + green + blue + 0.0001)) * minimum)
     saturation = np.subtract(1,np.multiply(np.divide(3,np.add(np.add(red,blue,green),0.0001)),minimum))
+    # saturation = 1 - np.multiply(np.divide(3,np.add(red,blue,green)),minimum)
 
     return saturation
 
@@ -119,29 +129,19 @@ def intensity(red, green, blue):
 
     return np.divide((blue + green + red), 3)
 
-#Calculate Hue
-def calc_hue(red,green,blue):
-    hue = np.copy(red)
-
-    for i in range(0, blue.shape[0]):
-        for j in range(0, blue.shape[1]):
-            hue[i][j] = 0.5 * ((red[i][j] - green[i][j]) + (red[i][j] - blue[i][j])) / \
-                        math.sqrt((red[i][j] - green[i][j])**2 +
-                                ((red[i][j] - blue[i][j]) * (green[i][j] - blue[i][j])))
-            hue[i][j] = math.acos(hue[i][j])
-
-            # print(f'tetha = {hue[i][j]}')
-
-            if blue[i][j] <= green[i][j]:
-                hue[i][j] = hue[i][j]
-            else:
-                hue[i][j] = ((360 * math.pi) / 180.0) - hue[i][j]
-            
-
-    return hue
-
-
 def normalize(array,newMax,newMin):
+    """
+    A simple normalization function.
+
+    Inputs:
+        - array: Array to be normalized
+        - newMax: Max of new range.
+        - newMin: Min of new range.
+
+    Returns:
+        Normalized array.
+    
+    """
     if isinstance(array, list):
         return list(map(normalize, array,newMax,newMin))
     if isinstance(array, tuple):
@@ -151,6 +151,17 @@ def normalize(array,newMax,newMin):
 
 
 def quantize(array, n_bits):
+    """
+    Image array(range of 0 to 255) is quantized to the desired number of bits. Its actually generate 
+    a new array, assuming that the representation uses 'n_bits' instead of the default 8 bits.
+
+    Inputs:
+        - array: The image matrix
+        - n_bits: Given number of bits.
+
+    Returns:
+        The quantized array.
+    """
     coeff = 2**8 // 2**n_bits
     return (array // coeff) * coeff
 

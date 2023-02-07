@@ -1,11 +1,37 @@
 import cv2
+import math
 import numpy as np
 import random
 from tqdm.notebook import tqdm
 import matplotlib.pyplot as plt
 plt.style.use(plt.style.available[5])
 
-def harris_corner_detector(img, window_size=5, k=0.04, threshold=0.3):  
+def harris_corner_detector(img, window_size=5, a=0.05, threshold=0.3,scale=1,maxima=False): 
+    """
+    The implementation of the Harris corner detection algorithm. 
+
+    Steps:
+    1) Compute the horizontal and vertical derivatives of the image (Ix and Iy).
+    2) Compute the second moment matrix M in a Gaussian window around each pixel.
+    3) Compute the corner response function R.
+    4) Threshold R :
+        R is large for a corner, R is negative with large magnitude for an edge and |R| is small
+        for a flat region.
+    5) Find local maximas of the corner response function.
+
+    Inputs:
+        - img: The image to find corners.
+        - window_size: Corner detector window size.
+        - a: corner response function alpha.
+        - thershold: The thershold to be applied on R
+        - scale: The scale of the image in comparison to the real image dimensions.
+        - maxima: Flag indicating whether to find local maxima.
+
+    Returns:
+        Image with green circles on it, representing  corners.
+    """ 
+
+    # gaussian kernel of derivation masks
     img_gaussian = cv2.GaussianBlur(img, (3, 3), 0)
 
     height = img.shape[0]  # shape[0] outputs height.
@@ -14,35 +40,34 @@ def harris_corner_detector(img, window_size=5, k=0.04, threshold=0.3):
     width = img.shape[1] # shape[1] outputs width.
     matrix_R = np.zeros((height, width))
 
-    # Calculate the x e y image derivatives (dx e dy)
+    # calculate the x e y image derivatives (dx e dy)
     dx = cv2.Sobel(img_gaussian, cv2.CV_64F, 1, 0, ksize=3)
     dy = cv2.Sobel(img_gaussian, cv2.CV_64F, 0, 1, ksize=3)
-    # dy, dx = np.gradient(gray)
 
-    # Calculate product and second derivatives (dx2, dy2 e dxy)
+    # calculate product and second derivatives (dx2, dy2 e dxy)
     dx2 = np.square(dx)
     dy2 = np.square(dy)
     dxy = dx*dy
 
     offset = int(window_size / 2)
 
-    # Calcular a soma dos produtos das derivadas para cada pixel (Sx2, Sy2 e Sxy)
+    # calculate the sum of the products of the derivatives for each pixel (Sx2, Sy2 e Sxy)
     for y in range(offset, height-offset):
         for x in range(offset, width-offset):
             Sx2 = np.sum(dx2[y-offset:y+1+offset, x-offset:x+1+offset])
             Sy2 = np.sum(dy2[y-offset:y+1+offset, x-offset:x+1+offset])
             Sxy = np.sum(dxy[y-offset:y+1+offset, x-offset:x+1+offset])
 
-            # Define the Second moment matrix M(x,y)=[[Sx2,Sxy],[Sxy,Sy2]]
+            # define the Second moment matrix M(x,y)=[[Sx2,Sxy],[Sxy,Sy2]]
             M = np.array([[Sx2, Sxy], [Sxy, Sy2]])
 
-            # Calculate the response function ( R=det(H)-k(Trace(H))^2 )
+            # calculate the corner response function: R=det(H)-a(Trace(H))^2
             det = np.linalg.det(M)
             tr = np.matrix.trace(M)
-            R = det-k*(tr**2)
+            R = det-a*(tr**2)
             matrix_R[y-offset, x-offset] = R
 
-    # Apply a threshold
+    # apply a threshold
     matrix = normalize(matrix_R.copy() ,1,0)
 
     for y in range(offset, height-offset):
@@ -50,7 +75,15 @@ def harris_corner_detector(img, window_size=5, k=0.04, threshold=0.3):
             value = matrix[y, x]
 
             if value > threshold:
-                cv2.circle(img, (x, y), 3, (0, 255, 0))
+
+                if maxima:
+                    # finding local maxiam if 'maxima' is true
+                    local_max = np.max(matrix[y-offset:y+1+offset, x-offset:x+1+offset])
+                    if (local_max - value) < 0.001:
+                        cv2.circle(img, (x, y), int(7*scale), (0, 255, 0), thickness=int(2*scale))
+
+                else:
+                    cv2.circle(img, (x, y), int(7*scale), (0, 255, 0), thickness=int(2*scale))
 
     return img
 

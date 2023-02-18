@@ -120,14 +120,14 @@ def box_filter(image,windowSize=3,imagePaddingSize=0):
     Returns:
         Smoothed image with (windowSize*windowSize) averaging kernel
     """
+    # TODO: drop padding
 
     width = image.shape[0]
     length = image.shape[1]
     size = windowSize-1
 
-    # if input image has padding, we drop the padding.
     # using 'uint8' to have pixels in range (0,255).
-    newImage = np.zeros((width-(2*imagePaddingSize),length-(2*imagePaddingSize)),dtype='uint8')
+    newImage = np.zeros((width,length),dtype='uint8')
 
     for i in range(0,length,1):
         for j in range(0,width,1):

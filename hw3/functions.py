@@ -16,31 +16,6 @@ def clip_filter(image,paddingSize):
     
     return frame
 
-# def box_filter(image,windowSize=3,imagePaddingSize=0):
-#     width = image.shape[0]
-#     length = image.shape[1]
-
-#     newImage = np.zeros((width-(2*imagePaddingSize),length-(2*imagePaddingSize)),dtype='uint8')
-
-#     for i in range(0,length-windowSize,1):
-#         for j in range(0,width-windowSize,1):
-#             start = (j,i)
-#             end0 = j+windowSize
-#             end1 = i+windowSize
-            
-#             if end0>width:
-#                 end0 = width
-                
-#             if end1>length:
-#                 end1 = length
-            
-#             end = (end0,end1)
-            
-#             buffer = image.copy()[start[0]:end[0], start[1]:end[1]][0]
-#             buffer_mean = np.mean(buffer)
-#             newImage[j,i] = buffer_mean
-
-#     return newImage
 
 def box_filter(image,windowSize=3,imagePaddingSize=0):
     """
@@ -60,24 +35,26 @@ def box_filter(image,windowSize=3,imagePaddingSize=0):
     length = image.shape[1]
     size = windowSize-1
 
+    print(size)
+
     # using 'uint8' to have pixels in range (0,255).
     newImage = np.zeros((width,length),dtype='uint8')
 
-    for i in range(0,length,1):
-        for j in range(0,width,1):
+    for i in range(0,width,1):
+        for j in range(0,length,1):
 
             # calculate proper boundaries for window
             # in left and top edges, indexes should be greater than 0
-            start = (max(j-size, 0),max(i-size, 0))
+            start = (max(i-size, 0),max(j-size, 0))
             # in right and down edges, indexes should be less than image length and width
-            end = (min(j+size, width-1),min(i+size, length-1))
+            end = (min(start[0]+size, width-1),min(start[1]+size, length-1))
 
             # crop a part of image which fits to kernel window
-            buffer = image.copy()[start[0]:(end[0]+1), start[1]:(end[1]+1)][0]
-
-            # averaging and replacing in the output image
+            buffer = image.copy()[start[0]:(end[0]+1), start[1]:(end[1]+1)]
+                      
+            # averaging and replace in the output image
             buffer_mean = np.mean(buffer)
-            newImage[j,i] = buffer_mean
+            newImage[i,j] = buffer_mean
 
     return newImage
             
@@ -149,13 +126,12 @@ def weighted_filter(image,mask,weight=1):
     # using 'uint8' to have pixels in range (0,255).
     newImage = np.zeros((width,length),dtype='uint8')
 
-    for i in range(0,length,1):
-        for j in range(0,width,1):
-            filter = np.ones_like(mask)
+    for i in range(0,width,1):
+        for j in range(0,length,1):
 
             # calculate proper boundaries for window
             # in left and top edges, indexes should be greater than 0
-            start = (max(j-size, 0),max(i-size, 0))
+            start = (max(i-size, 0),max(j-size, 0))
             # in right and down edges, indexes should be less than image length and width
             end = (min(start[0]+size, width-1),min(start[1]+size, length-1))
 
@@ -164,13 +140,20 @@ def weighted_filter(image,mask,weight=1):
                       
             # image and mask convolution(element-wise multiply)
             result_matrix = np.multiply(buffer,mask)
-
+            
             result = 0
             for m in range(result_matrix.shape[0]):
                 for n in range(result_matrix.shape[1]):
                     result += result_matrix[m][n]
+            
+            if result>255:
+                result = 255
+            elif result<0:
+                result = 0
 
-            newImage[j,i] = result*weight
+            x = int((end[0]-start[0])/2  + start[0]) 
+            y = int((end[1]-start[1])/2 + start[1])
+            newImage[x][y] = result*weight
 
     return newImage
 

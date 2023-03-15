@@ -90,28 +90,28 @@ def median_filter(image, windowSize=3,imagePaddingSize=0):
     # TODO: make it in the form of box filter inside the loops
     width = image.shape[0]
     length = image.shape[1]
-    image = np.asarray(image , dtype = "int32")
-    newImage = np.zeros((width-(2*imagePaddingSize),length-(2*imagePaddingSize)),dtype='uint8')
+    size = windowSize-1
 
-    for i in range(0,length-windowSize-1,1):
-        for j in range(0,width-windowSize-1,1):
-            start = (j,i)
-            end0 = j+windowSize
-            end1 = i+windowSize
-            
-            if end0>width:
-                end0 = width
-                
-            if end1>length:
-                end1 = length
-            
-            end = (end0,end1)
-            
-            buffer = image[start[0]:end[0], start[1]:end[1]] 
+    print(size)
 
+    # using 'uint8' to have pixels in range (0,255).
+    newImage = np.zeros((width,length),dtype='uint8')
+
+    for i in range(0,width,1):
+        for j in range(0,length,1):
+
+            # calculate proper boundaries for window
+            # in left and top edges, indexes should be greater than 0
+            start = (max(i-size, 0),max(j-size, 0))
+            # in right and down edges, indexes should be less than image length and width
+            end = (min(start[0]+size, width-1),min(start[1]+size, length-1))
+
+            # crop a part of image which fits to kernel window
+            buffer = image.copy()[start[0]:(end[0]+1), start[1]:(end[1]+1)]
+
+            # calculate median and replace in output image
             buffer_median = np.median(buffer)
-
-            newImage[j][i] = buffer_median
+            newImage[i][j] = buffer_median
     
     return newImage
 

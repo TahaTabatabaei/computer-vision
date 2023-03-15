@@ -54,6 +54,7 @@ def box_filter(image,windowSize=3,imagePaddingSize=0):
     Returns:
         Smoothed image with (windowSize*windowSize) averaging kernel
     """
+    # TODO: drop padding
 
     width = image.shape[0]
     length = image.shape[1]
@@ -139,37 +140,39 @@ def median_filter(image, windowSize=3,imagePaddingSize=0):
 
 def weighted_filter(image,mask,weight=1):
     # TODO: its faulty, resolve issue
-    filter = np.zeros_like(image).astype('float32')
-    newImage = np.zeros_like(image).astype('float32')
-    mask = mask.astype('float32')
-    image = image.astype('float32')
-    
-    for i in range(1, image.shape[0]-1):
-        for j in range(1, image.shape[1]-1):
-            
-            for x in range(mask.shape[0]):
-                for y in range(mask.shape[1]):
-                    
-                    filter[i][j] += mask[x, y]*image[i+(x-1), j+(y-1)]*weight
+    width = image.shape[0]
+    length = image.shape[1]
+    size = mask.shape[0]-1
 
-            # if filter[i][j] > -50 and filter[i][j] < 50:
-            #     # filter[i][j] = 0
-            #     newImage[i][j] = image[i][j] - np.abs(filter[i][j])
+    print(size)
 
-            #     pass
-            # else: 
-            #     # filter[i][j] += 0
-            #     newImage[i][j] = image[i][j] + np.abs(filter[i][j])
-            
-            newImage[i][j] = image[i][j] + filter[i][j]
+    # using 'uint8' to have pixels in range (0,255).
+    newImage = np.zeros((width,length),dtype='uint8')
 
-            
+    for i in range(0,length,1):
+        for j in range(0,width,1):
+            filter = np.ones_like(mask)
 
-    filter = ((filter-filter.min())/(filter.max()-filter.min()))*255.0
-    newImage = np.divide(newImage,(newImage.max()/255.0))
-    newImage = newImage.astype('int32')
+            # calculate proper boundaries for window
+            # in left and top edges, indexes should be greater than 0
+            start = (max(j-size, 0),max(i-size, 0))
+            # in right and down edges, indexes should be less than image length and width
+            end = (min(start[0]+size, width-1),min(start[1]+size, length-1))
 
-    return newImage , filter
+            # crop a part of image which fits to kernel window
+            buffer = image.copy()[start[0]:(end[0]+1), start[1]:(end[1]+1)]
+                      
+            # image and mask convolution(element-wise multiply)
+            result_matrix = np.multiply(buffer,mask)
+
+            result = 0
+            for m in range(result_matrix.shape[0]):
+                for n in range(result_matrix.shape[1]):
+                    result += result_matrix[m][n]
+
+            newImage[j,i] = result*weight
+
+    return newImage
 
 def mean_square_error(imageSource, imagetarget):
 	# the 'Mean Squared Error' between the two images is the

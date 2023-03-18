@@ -35,7 +35,6 @@ def box_filter(image,windowSize=3,imagePaddingSize=0):
     length = image.shape[1]
     size = windowSize-1
 
-    print(size)
 
     # using 'uint8' to have pixels in range (0,255).
     newImage = np.zeros((width,length),dtype='uint8')
@@ -56,6 +55,8 @@ def box_filter(image,windowSize=3,imagePaddingSize=0):
             buffer_mean = np.mean(buffer)
             newImage[i,j] = buffer_mean
 
+    if imagePaddingSize>0:
+        return newImage.copy()[imagePaddingSize:width-imagePaddingSize, imagePaddingSize:length-imagePaddingSize]
     return newImage
             
 
@@ -87,7 +88,6 @@ def salt_pepper(image, noiseDensity):
     return image
 
 def median_filter(image, windowSize=3,imagePaddingSize=0):
-    # TODO: make it in the form of box filter inside the loops
     width = image.shape[0]
     length = image.shape[1]
     size = windowSize-1
@@ -119,9 +119,10 @@ def weighted_filter(image,mask,weight=1):
     # TODO: its faulty, resolve issue
     width = image.shape[0]
     length = image.shape[1]
-    size = mask.shape[0]-1
+    wsize = mask.shape[0]-1
+    lsize = mask.shape[1]-1
 
-    print(size)
+    print(wsize,lsize)
 
     # using 'uint8' to have pixels in range (0,255).
     newImage = np.zeros((width,length),dtype='uint8')
@@ -131,9 +132,9 @@ def weighted_filter(image,mask,weight=1):
 
             # calculate proper boundaries for window
             # in left and top edges, indexes should be greater than 0
-            start = (max(i-size, 0),max(j-size, 0))
+            start = (max(i-wsize, 0),max(j-lsize, 0))
             # in right and down edges, indexes should be less than image length and width
-            end = (min(start[0]+size, width-1),min(start[1]+size, length-1))
+            end = (min(start[0]+wsize, width-1),min(start[1]+lsize, length-1))
 
             # crop a part of image which fits to kernel window
             buffer = image.copy()[start[0]:(end[0]+1), start[1]:(end[1]+1)]

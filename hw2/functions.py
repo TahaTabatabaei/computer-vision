@@ -3,15 +3,26 @@ import matplotlib.pyplot as plt
 import cv2
 import math
 
-def calc_hitogram(image):
+def calc_histogram(image):
+    """
+    Calculate image histogram. Iterates over an image and counts how meny times
+    it sees a pixel with an intensity of "k". "k" is in range [0,255]. "pdf" stands
+    for Probability Density Function.
 
-    length = image.shape[0]
-    width = image.shape[1]
+    Inputs:
+        - Input image of size (width,length)
+
+    Returns:
+        The image histogram.
+    """
+    width = image.shape[0]
+    length = image.shape[1]
 
     pdf = np.zeros(256)
 
-    for i in range(length):
-        for j in range(width):
+    # counts the intensity frequency
+    for i in range(width):
+        for j in range(length):
             k = image[i][j]
             pdf[k] +=1
 
@@ -81,7 +92,7 @@ def local_histo_equalization(image,windowSize):
             
             buffer = image[start[0]:end[0], start[1]:end[1]]
 
-            buffer_histo = calc_hitogram(buffer)
+            buffer_histo = calc_histogram(buffer)
             normal_buffer = normalizeHistogram(buffer_histo,windowSize,windowSize)
             buffer_cdf = calc_cdf(normal_buffer)
             remaped_buffer = reMap(buffer,buffer_cdf)

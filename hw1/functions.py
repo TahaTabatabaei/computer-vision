@@ -11,15 +11,29 @@ def get_bit_planes(image, bit_planes):
     image = (((image - image.min()) / (image.max() - image.min())) * 255.0).astype('uint8')
     return image
 
-def calc_hitogram(image):
-    length = image.shape[0]
-    width = image.shape[1]
+def calc_histogram(image):
+    """
+    Calculate image histogram. Iterates over an image and counts how meny times
+    it sees a pixel with an intensity of "k". "k" is in range [0,255]. "pdf" stands
+    for Probability Density Function.
+
+    Inputs:
+        - Input image of size (width,length)
+
+    Returns:
+        The image histogram.
+    """
+    width = image.shape[0]
+    length = image.shape[1]
+
     pdf = np.zeros(256)
 
-    for i in range(length):
-        for j in range(width):
+    # counts the intensity frequency
+    for i in range(width):
+        for j in range(length):
             k = image[i][j]
             pdf[k] +=1
+
 
     return pdf
 
@@ -52,15 +66,28 @@ def reMap(image,target_cdf):
     return newImage
 
 def mean_square_error(imageSource, imagetarget):
-	# the 'Mean Squared Error' between the two images is the
-	# sum of the squared difference between the two images;
-	# NOTE: the two images must have the same dimension
-	err = np.sum((imageSource.astype("float") - imagetarget.astype("float")) ** 2)
-	err /= float(imageSource.shape[0] * imageSource.shape[1])
+    """
+	The "Mean Squared Error" between the two images is the
+	sum of the squared difference between the two images.
+    the lower the error, the more "similar" the two images are.
+    
+	NOTE: the two images must have the same dimension
+
+    Inputs:
+        - imageSource: The source image, we want to calculate the target image difference of 
+        - imageTarget: The target image, we calculate how far it is from the source
 	
-	# return the MSE, the lower the error, the more "similar"
-	# the two images are
-	return format(err,'.4f')
+	Returns:
+        The MSE
+    """
+
+    # cumulative difference 
+    err = np.sum((imageSource.astype("float") - imagetarget.astype("float")) ** 2)
+
+    # divide by length*width
+    err /= float(imageSource.shape[0] * imageSource.shape[1])
+	
+    return format(err,'.6f')
 
 def averaging_filter(image,windowSize=3,downsaplingFactor=1):
     #  apply averaging filter with 'windowSize' as filter size and then down-sample the image by a factor of 'downsamplingFactor'

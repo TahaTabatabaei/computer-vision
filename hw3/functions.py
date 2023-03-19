@@ -4,10 +4,25 @@ import cv2
 
 # add padding to image
 def clip_filter(image,paddingSize):
+    """
+    Apply the "clip filter" method of padding an image, which adds zero padding around the 
+    input image.
+
+    Inputs:
+        - image: Input image of size (N,M)
+        - paddingSize: Desired size of image padding. Assumed to be eqaul in length and width.
+
+    Returns:
+        Image with padding.
+    """
+
+    # the new image: image + padding
     frame = np.zeros((image.shape[0]+int(2*paddingSize) ,image.shape[1]+int(2*paddingSize) ,3),dtype='uint8')
+    
     width = frame.shape[0]
     length = frame.shape[1]
 
+    # copy the source image to the output frame.
     for i in range(paddingSize,length-paddingSize):
         for j in range(paddingSize,width-paddingSize):
             x= i-paddingSize 
@@ -22,7 +37,7 @@ def box_filter(image,windowSize=3,imagePaddingSize=0):
     Apply averaging filter on Input image. Convolve kernel with size (windoSize,windowSize).
 
     Inputs:
-        - image: Input image of size (N,M)
+        - image: Input image of size (width,length)
         - windowSize: Size of averaging kernel
         - imagePaddingSize: Size of image padding. assumed to be eqaul in length and width
 
@@ -61,25 +76,60 @@ def box_filter(image,windowSize=3,imagePaddingSize=0):
             
 
 def laplacian_filter(image,mask):
-    return weighted_filter(image,mask,weight=1)
+    """
+    An special type of "weighted filter" is used. The input mask should satisfy the Laplacian filter
+    constraints, so this function is simply calling the default "weighted filter".
+
+    Inputs:
+        - image: Input image of size (width,length)
+        - mask: Mask to be convolved with the image.
+
+    Returns:
+        The convolution result.
+    
+    """
+    return weighted_filter(image,mask)
 
 
 def salt_pepper(image, noiseDensity):
+    """
+    The salt & papper noise generation mehtod. In this method, we add random salt
+    (pixels with 255 intensity) and papper(pixels with 0 intensity). The greater the 
+    "noiseDensity", the more salt & pepper generation results.
+
+    Inputs:
+        - image: Input image of size (N,M).
+        - noiseDensity: What percentage of the image should be turned to noise.
+
+    Returns:
+        The noisy image.
+    """
+
+    # calculate number of noisy pixels we need.
     n_noise = image.shape[0]*image.shape[1]*noiseDensity
+
     for i in range(int(n_noise)):
+        # salt or papper
         k = rand.randrange(2)
         if k == 0 :
+            # papper
             gray = 0
         else:
+            # salt
             gray = 255
 
+        # generate a random x,y. if the pixel in these coordinates is already 0 or 255, we
+        # regenerate another x,y . but if it is not 0 or 255, we break the while loop so it
+        # can be turned to salt or pepper.
         while(True):
             x = rand.randrange(image.shape[0])
             y = rand.randrange(image.shape[1])
             if len(image.shape) == 3:
-                if gray != image[x][y][0]:
+                # for images in RGB
+                if (gray != image[x][y][0]) or (gray != image[x][y][1]) or (gray != image[x][y][2]):
                     break
             else:
+                # for gray-scale
                 if gray != image[x][y]:
                     break
 
@@ -88,11 +138,22 @@ def salt_pepper(image, noiseDensity):
     return image
 
 def median_filter(image, windowSize=3,imagePaddingSize=0):
+    """
+    Apply the median to each window while iterating over the input image. Convolve the kernel
+    with a size of (windowSize, windowSize).
+
+    Inputs:
+        - image: Input image of size (width,length)
+        - windowSize: Size of median kernel
+        - imagePaddingSize: Size of image padding. assumed to be eqaul in length and width
+
+    Returns:
+        Smoothed image with (windowSize*windowSize) median kernel.
+    """
+
     width = image.shape[0]
     length = image.shape[1]
     size = windowSize-1
-
-    print(size)
 
     # using 'uint8' to have pixels in range (0,255).
     newImage = np.zeros((width,length),dtype='uint8')
@@ -116,7 +177,25 @@ def median_filter(image, windowSize=3,imagePaddingSize=0):
     return newImage
 
 def weighted_filter(image,mask,weight=1):
-    # TODO: its faulty, resolve issue
+    """
+    A generalization for a appling mask with weights in the form of:
+        weight = 1 / (absolut sum of mask elements)
+    The weight is actually for normalization, so you can ignore it, if you are
+    choosing mask elements consciously. 
+    The function supports mask with different widths.
+
+    Inputs:
+        - image: Input image of size (width,length)
+        - mask: Mask to be convolved with the image.
+        - weight: The formoula = 1 / (absolut sum of mask elements) . The default value
+        is 1, so it does not effect the result.
+
+    Returns:
+        The convolution result.
+
+
+
+    """
     width = image.shape[0]
     length = image.shape[1]
     wsize = mask.shape[0]-1
@@ -159,12 +238,29 @@ def weighted_filter(image,mask,weight=1):
     return newImage
 
 def mean_square_error(imageSource, imagetarget):
-	# the 'Mean Squared Error' between the two images is the
-	# sum of the squared difference between the two images;
-	# NOTE: the two images must have the same dimension
-	err = np.sum((imageSource.astype("float") - imagetarget.astype("float")) ** 2)
-	err /= float(imageSource.shape[0] * imageSource.shape[1])
+    """
+	The "Mean Squared Error" between the two images is the
+	sum of the squared difference between the two images.
+    the lower the error, the more "similar" the two images are.
+    
+	NOTE: the two images must have the same dimension
+
+    Inputs:
+        - imageSource: The source image, we want to calculate the target image difference of 
+        - imageTarget: The target image, we calculate how far it is from the source
 	
-	# return the MSE, the lower the error, the more "similar"
-	# the two images are
-	return format(err,'.4f')
+	Returns:
+        The MSE
+    """
+
+    # cumulative difference 
+    err = np.sum((imageSource.astype("float") - imagetarget.astype("float")) ** 2)
+
+    # divide by length*width
+    err /= float(imageSource.shape[0] * imageSource.shape[1])
+	
+    return format(err,'.6f')
+
+
+
+# TODO: to vaildate inputs

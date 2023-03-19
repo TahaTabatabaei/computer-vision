@@ -30,8 +30,20 @@ def calc_histogram(image):
     return pdf
 
 def normalizeHistogram(pdf,width,length):
+    """
+    A simple normalize on the histogram(pdf).
+
+    Inputs:
+        - pdf: A histogram.
+        - width: Width of image we wnat to normalize its histogram.
+        - length: length of image we wnat to normalize its histogram.
+
+    Returns:
+        Normalized histogram. 
+    """
     normal_pdf = np.zeros(len(pdf))
 
+    # normalize step
     for i in range(len(normal_pdf)):
         normal_pdf[i] = pdf[i]/(width*length)
 

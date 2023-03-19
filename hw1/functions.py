@@ -39,7 +39,7 @@ def calc_histogram(image):
 
 def normalizeHistogram(pdf,width,length):
     """
-    A simple normalize on the histogram(pdf).
+    A simple normalize on the histogram(pdf). Converts to range [0,1].
 
     Inputs:
         - pdf: A histogram.
@@ -58,12 +58,23 @@ def normalizeHistogram(pdf,width,length):
     return normal_pdf
 
 def calc_cdf(normal_pdf):
+    """
+    Calculates the CDF(Cumulative distribution function) over the input histogram. 
+
+    Inputs:
+        - normal_pdf: Normalized pdf.
+
+    Returns:
+        The CDF of input histogram.
+    """
     cdf = np.zeros(len(normal_pdf))
 
+    # CDF calculation.
     for i in range(len(normal_pdf)):
         for j in range(i):
             cdf[i] += normal_pdf[j]
     
+        # revert to range [0,255]
         cdf[i] *=255
         cdf[i] = round(cdf[i])
     

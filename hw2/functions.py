@@ -73,6 +73,17 @@ def calc_cdf(normal_pdf):
     return cdf
 
 def reMap(image,target_cdf):
+    """
+    Update the image pixels' intensity based on the target CDF. This function
+    implements a look-up table.
+
+    Inputs:
+        - image: Input image of size (N,M)
+        - target_cdf: A CDF table we want to use for equalization.
+
+    Returns;
+        An image whose pixels have been changed in order to achieve greater diversity.
+    """
     newImage = image.copy()
     for i in range(newImage.shape[0]):
         for j in range(newImage.shape[1]):

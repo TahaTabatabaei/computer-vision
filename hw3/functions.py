@@ -201,7 +201,6 @@ def weighted_filter(image,mask,weight=1):
     wsize = mask.shape[0]-1
     lsize = mask.shape[1]-1
 
-    print(wsize,lsize)
 
     # using 'uint8' to have pixels in range (0,255).
     newImage = np.zeros((width,length),dtype='uint8')

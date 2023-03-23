@@ -210,7 +210,7 @@ def replication(image,upsamplingFactor=2):
     
     newWidth = image.shape[0]*upsamplingFactor
     newLength = image.shape[1]*upsamplingFactor
-    
+
     newImage = np.zeros((newWidth,image.shape[1]))
 
     # copy rows
@@ -228,6 +228,20 @@ def replication(image,upsamplingFactor=2):
     return newImage2
     
 def interpolate_bilinear(array_in, array_out):
+    """
+    Estimate the value of pixels that are not part of the original image, by using the values of the four
+    closest pixels to the target location.
+    
+    Inputs:
+        - array_in: Input image of size (M,N)
+        - array_out: Output array of size (U,V)
+
+    Rutrns:
+        The interpolates image.
+        
+    source code:
+    https://eng.aurelienpierre.com/2020/03/bilinear-interpolation-on-images-stored-as-python-numpy-ndarray/
+    """
     width_in = array_in.shape[0]
     height_in = array_in.shape[1]
     width_out = array_out.shape[0]

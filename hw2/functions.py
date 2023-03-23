@@ -182,3 +182,27 @@ def local_histo_equalization(image,windowSize):
             newImage[start[0]:end[0], start[1]:end[1]] = remaped_buffer
 
     return newImage
+
+def histeq(image):
+    """
+    Histogram equalization routine.
+
+    Inputs:
+        - image: Input image of size (width,length)
+
+    Returns:
+        Equalized image.
+    """
+    width ,length ,band = image.shape
+    newImage = np.zeros_like(image)
+
+    # equalization routine
+    buffer_histo = calc_histogram(image)
+    normal_buffer = normalizeHistogram(buffer_histo,width,length)
+    buffer_cdf = calc_cdf(normal_buffer)
+    remaped_buffer = reMap(image,buffer_cdf)
+
+    # replace in the output image
+    newImage = remaped_buffer
+    return newImage
+    

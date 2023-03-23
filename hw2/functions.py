@@ -161,8 +161,8 @@ def local_histo_equalization(image,windowSize):
 
     newImage = np.zeros_like(image)
 
-    for i in range(0,length,windowSize):
-        for j in range(0,width,windowSize):
+    for i in range(0,width+size,windowSize):
+        for j in range(0,length+size,windowSize):
             # calculate proper boundaries for window
             # in left and top edges, indexes should be greater than 0
             start = (max(i-size, 0),max(j-size, 0))
@@ -174,12 +174,12 @@ def local_histo_equalization(image,windowSize):
 
             # equalization routine
             buffer_histo = calc_histogram(buffer)
-            normal_buffer = normalizeHistogram(buffer_histo,windowSize,windowSize)
+            normal_buffer = normalizeHistogram(buffer_histo,((end[0]+1)-start[0]),((end[1]+1)-start[1]))
             buffer_cdf = calc_cdf(normal_buffer)
             remaped_buffer = reMap(buffer,buffer_cdf)
 
             # replace in the output image
-            newImage[start[0]:end[0], start[1]:end[1]] = remaped_buffer
+            newImage[start[0]:(end[0]+1), start[1]:(end[1]+1)] = remaped_buffer
 
     return newImage
 

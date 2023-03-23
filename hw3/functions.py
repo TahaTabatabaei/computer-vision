@@ -2,7 +2,7 @@ import numpy as np
 import random as rand
 import cv2
 
-# add padding to image
+
 def clip_filter(image,paddingSize):
     """
     Apply the "clip filter" method of padding an image, which adds zero padding around the 

@@ -196,21 +196,34 @@ def downsample(image,windowSize=3,downsamplingFactor=1):
 
     return newImage
 
-def replication(image,upsamplngFactor=2):
-    # upsampling, by copying rows & columns
-    newWidth = image.shape[0]*upsamplngFactor
-    newLength = image.shape[1]*upsamplngFactor
+def replication(image,upsamplingFactor=2):
+    """
+    Upsampling, by copying rows & columns.
+
+    Inputs:
+        - image: Input image of size (width,length)
+        - upsamplingFactor: An absolute constant of up-sampling 
+
+    Returns:
+        Up-sampled image.
+    """
+    
+    newWidth = image.shape[0]*upsamplingFactor
+    newLength = image.shape[1]*upsamplingFactor
+    
     newImage = np.zeros((newWidth,image.shape[1]))
 
+    # copy rows
     for i in range(image.shape[0]):
-        for k in range(upsamplngFactor):
-            newImage[(i*upsamplngFactor)+k][:] = image[i][:]
+        for k in range(upsamplingFactor):
+            newImage[(i*upsamplingFactor)+k][:] = image[i][:]
 
     newImage2 = np.zeros((newWidth,newLength))
 
+    # copy columns
     for j in range(newImage.shape[1]):
-        for k in range(upsamplngFactor):
-            newImage2[: ,(j*upsamplngFactor)+k] = newImage[:,j]
+        for k in range(upsamplingFactor):
+            newImage2[: ,(j*upsamplingFactor)+k] = newImage[:,j]
             
     return newImage2
     

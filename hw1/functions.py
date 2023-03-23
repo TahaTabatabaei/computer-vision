@@ -1,7 +1,23 @@
 import numpy as np
 
 def quantize_simulation(image, n_bits):
+    """
+    Quantize the image, considering how many intensity levels it can make, with each level
+    having "n_bits" to show the intensity value.
+
+    Inputs:
+        - image: Input image of size (M,N)
+        - n_bits: Number of available bits per level
+
+    Returns:
+        The new image.
+
+    """
+
+    # coeff = number of levels
     coeff = 2**8 // 2**n_bits
+
+    # quantize pixels in eeach lavel
     return (image // coeff) * coeff
 
 def get_bit_planes(image, bit_planes):
@@ -18,7 +34,7 @@ def calc_histogram(image):
     for Probability Density Function.
 
     Inputs:
-        - Input image of size (width,length)
+        - image: Input image of size (width,length)
 
     Returns:
         The image histogram.
@@ -126,7 +142,7 @@ def mean_square_error(imageSource, imagetarget):
 def downsample(image,windowSize=3,downsamplingFactor=1):
     """
     Apply averaging with 'windowSize' as filter size and then down-sample the image
-    by a factor of 'downsamplingFactor'. This lead to an smoothed image with smaller size.
+    by factor of 'downsamplingFactor'. This lead to an smoothed image with smaller size.
     The new image size is:
         image.shape / downsamplingFactor. 
 

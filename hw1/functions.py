@@ -13,7 +13,6 @@ def quantize_simulation(image, n_bits):
         The new image.
 
     """
-
     # coeff = number of levels
     coeff = 2**8 // 2**n_bits
 
@@ -21,11 +20,26 @@ def quantize_simulation(image, n_bits):
     return (image // coeff) * coeff
 
 def get_bit_planes(image, bit_planes):
+    """
+    Generating a new image with only the information of the bits in "bit-planes". Less information
+    leads to more noisy image.
+
+    Inputs:
+        - image: Input image of size (M,N)
+        - bit_planes: A binary string of bits to be considered in image generation.
+
+    Returns:
+        The new image.
+    """
+    newImage = np.zeros_like(image)
     for i in range(image.shape[0]):
         for j in range(image.shape[1]):
-            image[i][j] = image[i][j] & bit_planes
-    image = (((image - image.min()) / (image.max() - image.min())) * 255.0).astype('uint8')
-    return image
+            # logical and, just use "bit_planes" bits of information
+            newImage[i][j] = image[i][j] & bit_planes
+    
+    # normalize to range [0,255]
+    newImage = (((newImage - newImage.min()) / (newImage.max() - newImage.min())) * 255.0).astype('uint8')
+    return newImage
 
 def calc_histogram(image):
     """

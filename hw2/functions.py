@@ -10,7 +10,7 @@ def calc_histogram(image):
     for Probability Density Function.
 
     Inputs:
-        - Input image of size (width,length)
+        - image: Input image of size (width,length)
 
     Returns:
         The image histogram.
@@ -92,14 +92,53 @@ def reMap(image,target_cdf):
     return newImage
 
 def log_transform(image, c):
+    """
+    Logarithmic transform. This transformation expands the dark pixels in the image
+    while compressing the brighter pixels.
+
+    Inputs: 
+        - image: Input image of size (width,length)
+        - c: Arbitrary constant
+
+    Returns:
+        The changed image.
+    """
+
+    # the logarithmic transform formula 
     s = c*np.log(1+image)
     return s
 
 def inverse_log_transform(image , c, base):
+    """
+    Inverse logarithmic transform. This transformation expands the bright pixels in the image
+    while compressing the darker pixels.
+
+    Inputs: 
+        - image: Input image of size (width,length)
+        - c: Arbitrary constant
+
+    Returns:
+        The changed image.
+    """
+    # the inverse logaritmic transform formula 
     s = c*(np.power(base,image)-1)
     return s
 
 def power_law_transform(image, c, gamma):
+    """
+    Power Law (Gamma) transform. Gamma correction is important for displaying images on
+    a screen correctly, to prevent bleaching or darkening of images. For gamma in range (0,1) , you can consider
+    this function as « n-th root transform ».
+
+    Inputs: 
+        - image: Input image of size (width,length)
+        - c: Arbitrary constant
+
+    Returns:
+        The changed image.
+    """
+
+    # the power law transform formula 
     s = c*np.power(image,gamma)
     return s
 

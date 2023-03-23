@@ -44,7 +44,6 @@ def box_filter(image,windowSize=3,imagePaddingSize=0):
     Returns:
         Smoothed image with (windowSize*windowSize) averaging kernel
     """
-    # TODO: drop padding
 
     width = image.shape[0]
     length = image.shape[1]

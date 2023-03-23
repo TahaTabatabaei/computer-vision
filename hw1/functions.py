@@ -123,24 +123,46 @@ def mean_square_error(imageSource, imagetarget):
 	
     return format(err,'.6f')
 
-def averaging_filter(image,windowSize=3,downsaplingFactor=1):
-    #  apply averaging filter with 'windowSize' as filter size and then down-sample the image by a factor of 'downsamplingFactor'
-    newWidth = int(image.shape[0]/downsaplingFactor)
-    newLength = int(image.shape[1]/downsaplingFactor)
+def downsample(image,windowSize=3,downsamplingFactor=1):
+    """
+    Apply averaging with 'windowSize' as filter size and then down-sample the image
+    by a factor of 'downsamplingFactor'. This lead to an smoothed image with smaller size.
+    The new image size is:
+        image.shape / downsamplingFactor. 
+
+    Inputs:
+        - image: Input image of size (width,length)
+        - windowSize: Size of averaging kernel
+        - downsamplingFactor: An absolute constant of down-sampling 
+
+    Returns:
+        Down-sampled image.
+    """
+
+    # calculate new image shape
+    newWidth = int(image.shape[0]/downsamplingFactor)
+    newLength = int(image.shape[1]/downsamplingFactor)
     newImage = np.zeros((newWidth,newLength))
 
-    for i in range(0, image.shape[0], downsaplingFactor):
-        for j in range(0, image.shape[1], downsaplingFactor):
-            end0 = i+windowSize
-            if end0>image.shape[0]:
-                end0 = image.shape[0]
-            
-            end1 = j+windowSize
-            if end1>image.shape[1]:
-                end1 = image.shape[1]
+    width = image.shape[0]
+    length = image.shape[1]
+    size = windowSize-1
 
-            buffer = np.mean(image[i:end0, j:end1], axis=(0,1))
-            newImage[int(i/downsaplingFactor), int(j/downsaplingFactor)] = buffer
+    for i in range(0, width, downsamplingFactor):
+        for j in range(0, length, downsamplingFactor):
+            
+            # calculate proper boundaries for window
+            # in left and top edges, indexes should be greater than 0
+            start = (max(i-size, 0),max(j-size, 0))
+            # in right and down edges, indexes should be less than image length and width
+            end = (min(start[0]+size, width-1),min(start[1]+size, length-1))
+
+            # crop a part of image which fits to kernel window
+            buffer = image.copy()[start[0]:(end[0]+1), start[1]:(end[1]+1)]
+
+            # averaging and replace in the output image. it looks for actual coordinates in the new image.
+            buffer_mean = np.mean(buffer)
+            newImage[int(i/downsamplingFactor), int(j/downsamplingFactor)] = buffer_mean
 
     return newImage
 

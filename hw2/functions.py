@@ -144,34 +144,41 @@ def power_law_transform(image, c, gamma):
 
 
 def local_histo_equalization(image,windowSize):
+    """
+    Applying a local histogram equalization routine, this function calls methods previously
+    implemented in order to achieve a valid set of actions.
+
+    Inputs:
+        - image: Input image of size (width,length)
+        - windowSize: Size of kernel
+
+    Returns:
+        Locally equalized image.
+    """
+
     width , length , band =image.shape
+    size = windowSize-1
 
     newImage = np.zeros_like(image)
-    n = 0
+
     for i in range(0,length,windowSize):
         for j in range(0,width,windowSize):
-            start = (j,i)
-            end0 = j+windowSize
-            end1 = i+windowSize
-            
-            if end0>width:
-                end0 = width
-                
-            if end1>length:
-                end1 = length
-            
-            end = (end0,end1)
-            
-            buffer = image[start[0]:end[0], start[1]:end[1]]
+            # calculate proper boundaries for window
+            # in left and top edges, indexes should be greater than 0
+            start = (max(i-size, 0),max(j-size, 0))
+            # in right and down edges, indexes should be less than image length and width
+            end = (min(start[0]+size, width-1),min(start[1]+size, length-1))
 
+            # crop a part of image which fits to kernel window
+            buffer = image.copy()[start[0]:(end[0]+1), start[1]:(end[1]+1)]
+
+            # equalization routine
             buffer_histo = calc_histogram(buffer)
             normal_buffer = normalizeHistogram(buffer_histo,windowSize,windowSize)
             buffer_cdf = calc_cdf(normal_buffer)
             remaped_buffer = reMap(buffer,buffer_cdf)
 
+            # replace in the output image
             newImage[start[0]:end[0], start[1]:end[1]] = remaped_buffer
 
-            n +=1
-            
-    eqaulizedImage = newImage
-    return eqaulizedImage
+    return newImage

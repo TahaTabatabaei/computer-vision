@@ -1,3 +1,4 @@
 **/hw[0-9]/__pycache__/
-**/hw4
 *.pyc
+*.pdf
+*.docx

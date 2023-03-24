@@ -8,9 +8,9 @@ It contains 7 folders, each named with a format of:
 
 Which specify each homework of others. Each folder contains three types of files.
 
-- functions.py : This file includes all the functions and methods implemneted by me, or codes from around the web. 
-- main.ipynb : This file is a kind of playground, which uses functions in `functions.py` and some other basic or third-party libraries in order to provide a solution to an exercise. In this file, first comes the problem and second, the solution code.
-- images: Images provided by the homework designer in the formats of `BMP` or `JPG`.
+- **functions.py**: This file includes all the functions and methods implemneted by me, or codes from around the web. 
+- **main.ipynb**: This file is a kind of playground, which uses functions in `functions.py` and some other basic or third-party libraries in order to provide a solution to an exercise. In this file, first comes the problem and second, the solution code.
+- **images**: Images provided by the homework designer in the formats of `BMP` or `JPG`.
 
 ## This project use:
 

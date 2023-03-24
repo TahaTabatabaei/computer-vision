@@ -377,3 +377,5 @@ def normalize(array,newMax,newMin):
     return normalizedData
 
 
+# source codes to read:
+# https://gist.github.com/tigercosmos/90a5664a3b698dc9a4c72bc0fcbd21f4
